@@ -1,4 +1,4 @@
-import glob, numpy, sys, getopt, urllib2, os
+import glob, numpy, sys, getopt, urllib2, os,subprocess
 from netCDF4 import Dataset
 from itertools import groupby
 from collections import Counter
@@ -19,8 +19,10 @@ def _get_python_implementation():
 
 def _run_scispark_implementation():
 	'''
-	Purpose: To run GTG runner for SciSpark results to compare
+	Purpose: To run GTG runner for SciSpark results to compare as a spark-submit task
 	'''
+	subprocess.call(, shell=True)
+
 def _compare_times(pyNodes, ssNodes, ssDir, allTimesInts):
 	'''
 	Purpose: To check the times of files in two nodelist to determine if similar
@@ -158,11 +160,10 @@ def _compare_content_in_CEs(pyDir, ssDir, pyNodes, ssNodes, allTimesInts):
 	else:
 		return True, CEs
 
-def _write_CE_mappings(workingDir, allCEs):
+def _write_CE_mappings(allCEs):
 	'''
 	Purpose: Indicate the mappings of the pyCEs to the ssCEs
-	Inputs: workingDir - output directory used for writing mapping files
-			allCEs - a list of list of tuples [frame, (python_CE, scispark_CE, overlap, %overlap if a float, 
+	Inputs: allCEs - a list of list of tuples [frame, (python_CE, scispark_CE, overlap, %overlap if a float, 
 							or number of pts not overlapping when one node is a subset of another)]
 	Outputs: writes a file in the output directory called CEmappings.txt with the data
 	'''
@@ -441,12 +442,11 @@ def test_3(pyDir, ssDir, pyNodes, ssNodes, allTimesInts):
 				of.write('%s has %d CEs in SciSpark implementation. Namely: %s \n' %(ce, c.get(ce)+1, map(lambda j: j[1], filter(lambda i: ce in i[0], accCeMap))))
 	return allCEs
 
-def test_4(pyEdgeList, ssEdgeList, workingDir):
+def test_4(pyEdgeList, ssEdgeList):
 	'''
 	Purpose: execute the fourth tests to compare the edgelist generated within either implementation
 	Inputs: pyEdgeList - a list of list of strings representing the connect nodes within each subgraph
 			ssEdgeList - a list of tuples of two strings representing an edge between connected nodes with subgraphs
-			workingDir - directory where data is written during test. Needed here to reach CEmappings.txt
 	Outputs: None
 	'''
 
@@ -473,6 +473,9 @@ def main(argv):
 	
 	global of
 	global workingDir
+
+	sTime = 2006091100
+	eTime = 2006091212
 
 	# create folder for outputs
 	if not glob.glob(os.getcwd()+'/verification'): os.mkdir('verification') 
@@ -542,10 +545,10 @@ def main(argv):
 		of.write('-'*80)
 
 		# write mappings of cloudelements in either implementation to a file
-		_write_CE_mappings(workingDir, allCEs)
+		_write_CE_mappings(allCEs)
 
 		# check edgelist
-		test_4(pyEdgeList, ssEdgeList, workingDir)
+		test_4(pyEdgeList, ssEdgeList)
 		print('-'*80)
 		of.write('-'*80)
 
