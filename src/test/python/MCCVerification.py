@@ -9,6 +9,17 @@ from datetime import date, datetime, timedelta
 #		2. Run the GTG release &.& with the same MERG files at input
 #		 
 #		
+# 
+def get_python_implementation():
+	'''
+	Purpose: To get the results of python implementation from the SciSpark website
+	'''
+
+def run_scispark_implementation():
+	'''
+	Purpose: To run GTG runner for SciSpark results to compare
+
+	'''
 def compare_times(pyNodes, ssNodes, ssDir, allTimesInts):
 	'''
 	Purpose: To check the times of files in two nodelist to determine if similar
@@ -150,7 +161,7 @@ def compare_content_in_CEs(pyDir, ssDir, pyNodes, ssNodes, allTimesInts):
 def write_CE_mappings(workingDir, allCEs):
 	'''
 	Purpose: Indicate the mappings of the pyCEs to the ssCEs
-	Inputs: workingDir - directory for writing mapping files
+	Inputs: workingDir - output directory used for writing mapping files
 			allCEs - a list of list of tuples [frame, (python_CE, scispark_CE, overlap, %overlap if a float, 
 							or number of pts not overlapping when one node is a subset of another)]
 	Outputs: writes a file in the output directory called CEmappings.txt with the data
@@ -276,6 +287,43 @@ def cloud_cluster(nodeName, groupedges):
 	        thisStack.append(i[1])
 	return edgelist
 
+def get_data(sTime, eTime, pyDir, ssDir):
+	'''
+	Purpose: to acquire necessary data from the two implementations
+	Inputs: sTime - int (YYYYMMDDhh) representing the starttime for the input data in the test 
+		    eTime - int (YYYYMMDDhh) representing the end time for the input data in the test 
+		    pyDir - string representing the path to the directory with the netCDF files from the python implementation
+		    ssDir - string representing the path to the directory with the netCDF files from the SciSpark implementation
+			pyEdgeList - a list of list of strings representing the connect nodes within each subgraph
+			ssEdgeList - a list of tuples of two strings representing an edge between connected nodes with subgraphs
+	Outputs: allTimesInts - list of ints (YYYYMMDDhh) representing dates between startTime and endTime
+			pyNodes - a list of strings (F##CE##) representing the nodes found in the Python implementation. F## is the frame integer
+			ssNodes - a list of strings representing the nodes found in the SciSpark implementation. F## is the datetime of the frame in the format YYYYMMDDhh
+	'''
+	startTime = datetime(int(str(sTime)[:4]), int(str(sTime)[4:6]), int(str(sTime)[6:8]), int(str(sTime)[8:10]))
+	endTime = datetime(int(str(eTime)[:4]), int(str(eTime)[4:6]), int(str(eTime)[6:8]), int(str(eTime)[8:10]))
+	a = [aDate for aDate in [startTime+timedelta(hours=i) for i in xrange(((endTime - startTime).days* 24 + (endTime - startTime).seconds/3600)+1)]]
+	allTimesInts = map(lambda x: int(x.strftime('%Y%m%d%H')), a)
+
+	with open(ssDir+'/textFiles/MCCNodesLines_150Area.json', 'r') as sF:
+		sFs = sF.readlines()
+	ssNodes = sorted (map(lambda x: x[:-1], sFs),  key=lambda x:x.split('F')[1].split('CE')[0])
+
+	with open(pyDir+'/textFiles/CEList.txt', 'r') as pF:
+		pFs = pF.readline()
+	pyNodes = map(lambda y: y.lstrip(), sorted(pFs[1:-1].replace('\'','').split(','), key=lambda x:x.split('F')[1].split('CE')[0]))
+
+	with open(ssDir+'/textFiles/MCCEdges.txt', 'r') as sF:
+		sFs = sF.readlines()
+	ssEList = map(lambda x: x+'))', sFs[0].split('List(')[1][:-3].split(')), '))
+	ssEdgeList = map(lambda x: ('F'+x.split(',')[0].split('((')[1]+'CE'+x.split(',')[1].split(')')[0], 'F'+x.split(',')[2].split('(')[1]+'CE'+x.split(',')[3].split('))')[0]), ssEList)
+	
+	with open(pyDir+'/textFiles/MCSList.txt', 'r') as pF:
+		pFs = pF.readline()
+	pyEdgeList = map( lambda x: x[1:].replace('\'','').split(','), pFs[1:-1].split(']'))
+
+	return allTimesInts,ssNodes, pyNodes, ssEdgeList, pyEdgeList
+
 
 def test_1(pyNodes, ssNodes, ssDir, allTimesInts):
 	''' 
@@ -395,6 +443,11 @@ def test_3(pyDir, ssDir, pyNodes, ssNodes, allTimesInts):
 
 def test_4(pyEdgeList, ssEdgeList, workingDir):
 	'''
+	Purpose: execute the fourth tests to compare the edgelist generated within either implementation
+	Inputs: pyEdgeList - a list of list of strings representing the connect nodes within each subgraph
+			ssEdgeList - a list of tuples of two strings representing an edge between connected nodes with subgraphs
+			workingDir - directory where data is written during test. Needed here to reach CEmappings.txt
+	Outputs: None
 	'''
 
 	subgraphs = graph_from_edgeList(pyEdgeList, ssEdgeList)
@@ -456,29 +509,8 @@ def main(argv):
 	print 'Results will be stored at %s in %s' %(workingDir, 'output.log')
 
 	# --- Acquire the data from the different implementations for the tests ---
-	startTime = datetime(int(str(sTime)[:4]), int(str(sTime)[4:6]), int(str(sTime)[6:8]), int(str(sTime)[8:10]))
-	endTime = datetime(int(str(eTime)[:4]), int(str(eTime)[4:6]), int(str(eTime)[6:8]), int(str(eTime)[8:10]))
-	a = [aDate for aDate in [startTime+timedelta(hours=i) for i in xrange(((endTime - startTime).days* 24 + (endTime - startTime).seconds/3600)+1)]]
-	allTimesInts = map(lambda x: int(x.strftime('%Y%m%d%H')), a)
-
-	with open(ssDir+'/textFiles/MCCNodesLines_150Area.json', 'r') as sF:
-		sFs = sF.readlines()
-	ssNodes = sorted (map(lambda x: x[:-1], sFs),  key=lambda x:x.split('F')[1].split('CE')[0])
-
-	with open(pyDir+'/textFiles/CEList.txt', 'r') as pF:
-		pFs = pF.readline()
-	pyNodes = map(lambda y: y.lstrip(), sorted(pFs[1:-1].replace('\'','').split(','), key=lambda x:x.split('F')[1].split('CE')[0]))
-
-	with open(ssDir+'/textFiles/MCCEdges.txt', 'r') as sF:
-		sFs = sF.readlines()
-	ssEList = map(lambda x: x+'))', sFs[0].split('List(')[1][:-3].split(')), '))
-	ssEdgeList = map(lambda x: ('F'+x.split(',')[0].split('((')[1]+'CE'+x.split(',')[1].split(')')[0], 'F'+x.split(',')[2].split('(')[1]+'CE'+x.split(',')[3].split('))')[0]), ssEList)
+	allTimesInts,ssNodes, pyNodes, ssEdgeList, pyEdgeList = get_data(sTime, eTime, pyDir, ssDir)
 	
-	with open(pyDir+'/textFiles/MCSList.txt', 'r') as pF:
-		pFs = pF.readline()
-	pyEdgeList = map( lambda x: x[1:].replace('\'','').split(','), pFs[1:-1].split(']'))
-	# --- end acquire data --
-
 	with open (workingDir+'/output.log', 'w') as of:
 		of.write('Starting MCC accuracy tests ...\n')
 		of.write('Using Python implementations results at ' + pyDir+'\n')
