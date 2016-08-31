@@ -1,4 +1,4 @@
-import glob, numpy, sys, getopt, urllib2, os,subprocess
+import glob, numpy, sys, getopt, urllib, zipfile, os,subprocess
 from netCDF4 import Dataset
 from itertools import groupby
 from collections import Counter
@@ -7,21 +7,42 @@ from datetime import date, datetime, timedelta
 # REAMDE: how to run these tests. 
 # 		1. Run SciSpark GTG with the MERG files on the repo at /path/
 #		2. Run the GTG release &.& with the same MERG files at input
-#		 
-#		
 # 
+
 def _get_python_implementation():
 	'''
 	Purpose: To get the results of python implementation from the SciSpark website
 	Inputs: None
 	Outputs: None
 	'''
+	pythonGTG = 'https://scispark.jpl.nasa.gov/pythonGTG.zip'
+	
+	os.chdir(workingDir)
+	try:
+		if not os.path.isfile(workingDir+'/pythonGTG.zip'): 
+			zippedfile = urllib.urlretrieve(pythonGTG, workingDir+'/pythonGTG.zip')
+
+		if not os.path.exists(workingDir+'/pythonGTG'):
+			zipGTG = zipfile.ZipFile(workingDir+'/pythonGTG.zip', 'r')
+			zipGTG.extractall(workingDir)
+			zipGTG.close()
+
+		os.remove(workingDir+'/pythonGTG.zip')
+		
+		print 'Python implementation data retreived from %s' %pythonGTG
+		of.write('Python implementation data retreived from %s' %pythonGTG)
+		return True
+	except:
+		print '!!Problem retreiving %s' %pythonGTG
+		of.write('\n!!Problem retreiving %s' %pythonGTG)
+		return False 
 
 def _run_scispark_implementation():
 	'''
 	Purpose: To run GTG runner for SciSpark results to compare as a spark-submit task
 	'''
-	subprocess.call(, shell=True)
+	sparkSubmitStr = 'spark-submit GTGRunner , List("ch4", "longitude", "latitude"), 4'
+	# subprocess.call(, shell=True)
 
 def _compare_times(pyNodes, ssNodes, ssDir, allTimesInts):
 	'''
@@ -481,7 +502,6 @@ def main(argv):
 	if not glob.glob(os.getcwd()+'/verification'): os.mkdir('verification') 
 	workingDir = (os.getcwd()+'/verification')
 
-	# get the implementations data
 	
 	try:
 		opts, args = getopt.getopt(argv,"hd:t:")
@@ -529,6 +549,10 @@ def main(argv):
 		print('-'*80)
 		of.write('-'*80)
 
+		# get the implementations data
+		if not _get_python_implementation():
+			sys.exit(2)
+		
 		# check times between implementations
 		test_1(pyNodes, ssNodes, ssDir, allTimesInts)
 		print('-'*80)
