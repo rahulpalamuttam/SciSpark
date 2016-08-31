@@ -534,7 +534,6 @@ def main(argv):
 	print 'Using SciSpark implementation results at %s' %ssDir
 	print 'Results will be stored at %s in %s' %(workingDir, 'output.log')
 
-	sys.exit()
 	# --- Acquire the data from the different implementations for the tests ---
 	allTimesInts,ssNodes, pyNodes, ssEdgeList, pyEdgeList = _get_data(sTime, eTime, pyDir, ssDir)
 	
@@ -572,7 +571,6 @@ def main(argv):
 		test_4(pyEdgeList, ssEdgeList)
 		print('-'*80)
 		of.write('-'*80)
-
 
 if __name__ == '__main__':
 	main(sys.argv[1:]) 
