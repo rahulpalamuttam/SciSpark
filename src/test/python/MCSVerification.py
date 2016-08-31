@@ -1,13 +1,8 @@
-import glob, numpy, sys, getopt, urllib, zipfile, os,subprocess
+import getopt, glob, numpy, os, subprocess, sys, urllib, zipfile 
 from netCDF4 import Dataset
 from itertools import groupby
 from collections import Counter
 from datetime import date, datetime, timedelta
-
-# REAMDE: how to run these tests. 
-# 		1. Run SciSpark GTG with the MERG files on the repo at /path/
-#		2. Run the GTG release &.& with the same MERG files at input
-# 
 
 def _get_python_implementation():
 	'''
@@ -335,7 +330,7 @@ def _get_data(sTime, eTime, pyDir, ssDir):
 	a = [aDate for aDate in [startTime+timedelta(hours=i) for i in xrange(((endTime - startTime).days* 24 + (endTime - startTime).seconds/3600)+1)]]
 	allTimesInts = map(lambda x: int(x.strftime('%Y%m%d%H')), a)
 
-	with open(ssDir+'/textFiles/MCCNodesLines_150Area.json', 'r') as sF:
+	with open(ssDir+'/textFiles/MCCNodesLines.json', 'r') as sF:
 		sFs = sF.readlines()
 	ssNodes = sorted (map(lambda x: x[:-1], sFs),  key=lambda x:x.split('F')[1].split('CE')[0])
 
@@ -534,9 +529,6 @@ def main(argv):
 	print 'Using SciSpark implementation results at %s' %ssDir
 	print 'Results will be stored at %s in %s' %(workingDir, 'output.log')
 
-	# --- Acquire the data from the different implementations for the tests ---
-	allTimesInts,ssNodes, pyNodes, ssEdgeList, pyEdgeList = _get_data(sTime, eTime, pyDir, ssDir)
-	
 	with open (workingDir+'/output.log', 'w') as of:
 		of.write('Starting MCC accuracy tests ...\n')
 		of.write('Using Python implementations results at ' + pyDir+'\n')
@@ -549,6 +541,9 @@ def main(argv):
 		if not _get_python_implementation():
 			sys.exit(2)
 		
+		# --- Acquire the data from the different implementations for the tests ---
+		allTimesInts,ssNodes, pyNodes, ssEdgeList, pyEdgeList = _get_data(sTime, eTime, pyDir, ssDir)
+	
 		# check times between implementations
 		test_1(pyNodes, ssNodes, ssDir, allTimesInts)
 		print('-'*80)
