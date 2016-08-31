@@ -13,7 +13,7 @@ def _get_python_implementation():
 	'''
 	Purpose: To get the results of python implementation from the SciSpark website
 	Inputs: None
-	Outputs: None
+	Outputs: Boolean representing success retrieving the data
 	'''
 	pythonGTG = 'https://scispark.jpl.nasa.gov/pythonGTG.zip'
 	
@@ -29,21 +29,29 @@ def _get_python_implementation():
 
 		os.remove(workingDir+'/pythonGTG.zip')
 		
-		print 'Python implementation data retreived from %s' %pythonGTG
-		of.write('Python implementation data retreived from %s' %pythonGTG)
+		print 'Python implementation data retrieved from %s' %pythonGTG
+		of.write('Python implementation data retrieved from %s' %pythonGTG)
 		return True
 	except:
-		print '!!Problem retreiving %s' %pythonGTG
-		of.write('\n!!Problem retreiving %s' %pythonGTG)
+		print '!!Problem retrieving %s' %pythonGTG
+		of.write('\n!!Problem retrieving %s' %pythonGTG)
 		return False 
 
 def _run_scispark_implementation():
 	'''
 	Purpose: To run GTG runner for SciSpark results to compare as a spark-submit task
 	'''
-	sparkSubmitStr = 'spark-submit GTGRunner , List("ch4", "longitude", "latitude"), 4'
+	sparkSubmitStr = 'spark-submit --master local[3] /path/to/GTGRunner.jar, /resources/paperSize, List("ch4", "longitude", "latitude"), 4'
 	# subprocess.call(, shell=True)
+	# mv data to the correct location for comparison
+	os.mkdir(workingDir+'/scisparkGTG')
+	os.mkdir(workingDir+'/scisparkGTG/textFiles')
+	os.mkdir(workingDir+'/scisparkGTG/MERGnetcdfCEs')
+	os.chdir(workingDir+'/scisparkGTG')
 
+	#copy generated netcdfs, MCCNodeMap, and edgelist to ssDir 
+
+	
 def _compare_times(pyNodes, ssNodes, ssDir, allTimesInts):
 	'''
 	Purpose: To check the times of files in two nodelist to determine if similar
@@ -552,6 +560,8 @@ def main(argv):
 		# get the implementations data
 		if not _get_python_implementation():
 			sys.exit(2)
+		pyDir = workingDir+'/pythonGTG'
+		ssDir = workingDir+'/scisparkGTG'
 		
 		# check times between implementations
 		test_1(pyNodes, ssNodes, ssDir, allTimesInts)
