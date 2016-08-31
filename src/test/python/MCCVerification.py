@@ -508,44 +508,33 @@ def main(argv):
 
 	# create folder for outputs
 	if not glob.glob(os.getcwd()+'/verification'): os.mkdir('verification') 
+	
 	workingDir = (os.getcwd()+'/verification')
-
+	pyDir = workingDir+'/pythonGTG'
+	ssDir = workingDir+'/scisparkGTG'
 	
 	try:
-		opts, args = getopt.getopt(argv,"hd:t:")
-
+		opts, args = getopt.getopt(argv, "h")
 		if len(opts) == 1:
-			if not '-h' in opts[0][0]:
-				print 'Please run: python checkResultsRe.py -h'
+			if '-h' in opts[0][0]:
+				print 'These are the verification test to determine if SciSpark GTG is operating correctly.'
+				print 'The data used in the runs were used in the paper, and the python GTG results are downloaded.'
+				print 'If needed, the original GTG can de downloaded and used to generate the results. Please use the original release - Release 1.0'
 				sys.exit(2)
-		
-		for opt, arg in opts:
-			if opt in '-h':
-				print 'python checkResultsRe.py -d <pythonDir, ssDir, workingDir> -t <sTime, eTime> \n time format is YYYYMMDDhh'
-				sys.exit()
-			elif opt in '-d':	
-				dirs = [i for i in arg.split(',')]
-				pyDir = dirs[0]
-				ssDir = dirs[1]
-				workingDir = dirs[2]
-			elif opt in '-t':
-				times = [i for i in arg.split(',')]
-				sTime = int(times[0])
-				eTime = int(times[1])
-
+			else:
+				print 'Please run: python MCSVerification.py -h'
+				sys.exit(2)
 	except getopt.GetoptError:
-		print 'Using defaults settings '
-		pyDir = '/verification/run241K65OverlapNoCross'
-		ssDir = '/verification/CEs'
-		workingDir = '/verification/workingDir'
-		sTime = 2006091100
-		eTime = 2006091212
-	
+		print 'Please run: python MCSVerification.py -h'
+		sys.exit(2)
+
+
 	print 'Starting MCS accuracy tests ...'
 	print 'Using Python implementations results at %s' %pyDir
 	print 'Using SciSpark implementation results at %s' %ssDir
 	print 'Results will be stored at %s in %s' %(workingDir, 'output.log')
 
+	sys.exit()
 	# --- Acquire the data from the different implementations for the tests ---
 	allTimesInts,ssNodes, pyNodes, ssEdgeList, pyEdgeList = _get_data(sTime, eTime, pyDir, ssDir)
 	
@@ -560,8 +549,6 @@ def main(argv):
 		# get the implementations data
 		if not _get_python_implementation():
 			sys.exit(2)
-		pyDir = workingDir+'/pythonGTG'
-		ssDir = workingDir+'/scisparkGTG'
 		
 		# check times between implementations
 		test_1(pyNodes, ssNodes, ssDir, allTimesInts)
