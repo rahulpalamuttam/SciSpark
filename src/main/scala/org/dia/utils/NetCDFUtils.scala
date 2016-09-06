@@ -19,14 +19,13 @@ package org.dia.utils
 
 import java.net.URL
 
-import scala.language.implicitConversions
+import scala.language.implicitConversions'
 
 import org.apache.http.auth.{AuthScope, UsernamePasswordCredentials}
 import ucar.ma2
 import ucar.ma2.DataType
 import ucar.nc2.{Attribute, NetcdfFile, Variable}
 import ucar.nc2.dataset.NetcdfDataset
-
 import org.dia.HDFSRandomAccessFile
 
 /**

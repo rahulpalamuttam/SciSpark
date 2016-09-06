@@ -76,7 +76,7 @@ class SciSparkContext(@transient val sparkContext: SparkContext) {
   def this(conf: SparkConf) {
     this(new SparkContext(conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .set("spark.kryo.registrator", "org.nd4j.Nd4jRegistrator")
-      .set("spark.kryoserializer.buffer.max", "256MB")))
+      .set("spark.kryoserializer.buffer.max", "1000MB")))
   }
 
   def this(uri: String, name: String) {
@@ -328,4 +328,19 @@ class SciSparkContext(@transient val sparkContext: SparkContext) {
     new SRDD[SciTensor](sparkContext, datasetPaths, varName, loadNetCDFNDVar, mapSubFoldersToFolders)
   }
 
+  def createRandomsRDD(size: Int, partitions: Int): RDD[SciDataset] = {
+    val nums = sparkContext.parallelize(0 until size by 1, partitions)
+    val srdd = nums.map(p => {
+      val name = "merg_" + p + "_4km-pixel.nc"
+      val vars = List(
+        ("vector", Array(1, 25000000)),
+        ("square", Array(5000, 5000)),
+        ("cube", Array(300, 300, 300)),
+        ("hyperCube", Array(70, 70, 70, 70))
+      )
+      val global_attrs = List(("type", "Double"), ("dataset", "randomMerg"))
+      createRandomSciDataset(name, vars, global_attrs)
+    })
+    srdd
+  }
 }

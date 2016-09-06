@@ -157,5 +157,10 @@ class SRDDFunctionsTest extends FunSuite with BeforeAndAfterEach {
     }
   }
 
-
+  test("createRandomSciDataset") {
+    val randomRDD = SparkTestConstants.sc.createRandomsRDD(1, 1)
+    val random = randomRDD.collect
+    randomRDD.writeSRDD("./")
+    assert(true)
+  }
 }
