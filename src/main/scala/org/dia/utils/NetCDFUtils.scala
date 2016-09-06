@@ -19,7 +19,7 @@ package org.dia.utils
 
 import java.net.URL
 
-import scala.language.implicitConversions'
+import scala.language.implicitConversions
 
 import org.apache.http.auth.{AuthScope, UsernamePasswordCredentials}
 import ucar.ma2
