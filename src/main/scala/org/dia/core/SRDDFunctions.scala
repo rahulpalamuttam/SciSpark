@@ -47,12 +47,12 @@ class SRDDFunctions(self: RDD[SciDataset]) extends Serializable {
    * under tmp and the copies it to hdfs.
    * TODO :: Write netcdfFile directly to hdfs rather to local fs and then copying over.
    */
-  def writeSRDD(directoryPath : String): Unit = {
+  def writeSRDD(directoryPath : String, stagingPath : String = "/tmp/"): Unit = {
     self.foreach(p => {
-      p.writeToNetCDF(p.datasetName, "/tmp/")
+      p.writeToNetCDF(p.datasetName, stagingPath)
       val conf = new Configuration()
       val fs = FileSystem.get(new URI(directoryPath), conf)
-      FileUtil.copy(new File("/tmp/" + p.datasetName), fs, new Path(directoryPath), true, conf)
+      FileUtil.copy(new File(stagingPath + p.datasetName), fs, new Path(directoryPath), true, conf)
     })
   }
 
