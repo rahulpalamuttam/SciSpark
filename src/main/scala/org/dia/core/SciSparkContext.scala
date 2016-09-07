@@ -257,6 +257,28 @@ class SciSparkContext(@transient val sparkContext: SparkContext) {
     rdd
   }
 
+  /**
+    * Constructs an RDD given a URI pointing to an HDFS directory of Netcdf files and a list of variable names.
+    * Note that since the files are read from HDFS, the binaryFiles function is used which is called
+    * from SparkContext. This is why a normal RDD is returned instead of an SRDD.
+    *
+    * TODO :: Create an SRDD instead of a normal RDD
+    */
+  def netcdfDFSDatasets(path: String,
+                        varName: List[String] = Nil,
+                        partitions: Int = defaultPartitions): RDD[SciDataset] = {
+
+    val textFiles = sparkContext.binaryFiles(path, partitions)
+    textFiles.map(p => {
+      val byteArray = p._2.toArray()
+      val dataset = loadNetCDFFile(p._1, byteArray)
+      varName match {
+        case Nil => new SciDataset(dataset)
+        case s => new SciDataset(dataset, varName)
+      }
+    })
+  }
+
 
   /**
    * Constructs a random SRDD from a file of URI's, a list of variable names, and matrix dimensions.
