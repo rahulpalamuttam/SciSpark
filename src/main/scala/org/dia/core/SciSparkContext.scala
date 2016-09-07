@@ -350,16 +350,19 @@ class SciSparkContext(@transient val sparkContext: SparkContext) {
     new SRDD[SciTensor](sparkContext, datasetPaths, varName, loadNetCDFNDVar, mapSubFoldersToFolders)
   }
 
-  def createRandomsRDD(size: Int, partitions: Int): RDD[SciDataset] = {
+  def createRandomSRDD(size: Int,
+                       partitions: Int,
+                       varChoice: List[Int] = List(0, 1, 2, 3)): RDD[SciDataset] = {
     val nums = sparkContext.parallelize(0 until size by 1, partitions)
     val srdd = nums.map(p => {
       val name = "merg_" + p + "_4km-pixel.nc"
-      val vars = List(
+      val allvars = List(
         ("vector", Array(1, 25000000)),
         ("square", Array(5000, 5000)),
         ("cube", Array(300, 300, 300)),
         ("hyperCube", Array(70, 70, 70, 70))
       )
+      val vars = varChoice.map(p => allvars(p))
       val global_attrs = List(("type", "Double"), ("dataset", "randomMerg"))
       createRandomSciDataset(name, vars, global_attrs)
     })

@@ -28,10 +28,10 @@ object RandomSRDDWriter {
     val stagepath = args(2)
     val numFiles = args(3).toInt
     val partitions = args(4).toInt
-
+    val varChoices = if (args.length < 6) List(0, 1, 2, 3) else args(5).split(",").map(_.toInt).toList
 
     val ssc = new SciSparkContext(master, "WriterApp")
-    val k = ssc.createRandomsRDD(numFiles, partitions)
+    val k = ssc.createRandomSRDD(numFiles, partitions, varChoices)
     k.writeSRDD(hdfspath, stagepath)
   }
 }
