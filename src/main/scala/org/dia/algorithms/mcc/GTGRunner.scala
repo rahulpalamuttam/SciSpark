@@ -45,7 +45,8 @@ class GTGRunner(val masterURL: String,
                 val innerTemp : Double = 233.0,
                 val convectiveFraction : Double = 0.9,
                 val minArea : Int = 625,
-                val nodeMinArea : Int = 150) {
+                val nodeMinArea : Int = 150,
+                val minGraphLength: Int = 4) {
 
   val logger = org.slf4j.LoggerFactory.getLogger(this.getClass)
 
@@ -63,7 +64,7 @@ class GTGRunner(val masterURL: String,
 
     val MCCNodes = edges.flatMap(edge => List(edge.srcNode, edge.destNode)).distinct
     val MCCNodeKeyValuesSet = MCCNodes.map(node => {
-      val key = s"${node.frameNum},${node.cloudElemNum}"
+      val key = node.hashKey()
       node.updateLatLon(lat, lon)
       (key, node)
     })
@@ -175,7 +176,8 @@ class GTGRunner(val masterURL: String,
         def updateComponent(label: Double, frame: String, value: Double, row: Int, col: Int): Unit = {
           if (label != 0.0) {
             val node = nodeMap.getOrElse(frame + ":" + label, new MCCNode(frame, label))
-            nodeMap(frame + ":" + label) = node.update(value, row, col)
+            node.updateNodeData(value, row, col)
+            nodeMap(frame + ":" + label) = node
           }
         }
 
@@ -324,16 +326,44 @@ class GTGRunner(val masterURL: String,
       minArea,
       nodeMinArea)
 
+
+    edgeListRDD.cache()
+    edgeListRDD.localCheckpoint()
+
     /**
      * Collect the edgeList and construct NodeMap
      */
     val MCCEdgeList = edgeListRDD.collect()
     val MCCNodeMap = createNodeMapFromEdgeList(MCCEdgeList, lat, lon)
 
+    val broadcastedNodeMap = sc.sparkContext.broadcast(MCCNodeMap)
+
     /**
      * Process the edge list. Collect and output edges and vertices
      */
     processEdges(MCCEdgeList, MCCNodeMap)
+
+    /**
+     * Generate the netcdfs
+     */
+    edgeListRDD.foreach(x =>
+      MCSUtils.get_node_data(x, broadcastedNodeMap.value, lat, lon, false))
+
+    /**
+     * Find the subgraphs
+     */
+    val edgeListRDDIndexed = MCCOps.createPartitionIndex(edgeListRDD)
+    val count = edgeListRDDIndexed.count.toInt
+    val buckets = 4
+    val maxParitionSize = count / buckets
+    val subgraphs = edgeListRDDIndexed
+      .map(MCCOps.mapEdgesToBuckets(_, maxParitionSize, buckets))
+      .groupByKey()
+    val subgraphsFound = MCCOps.findSubgraphsIteratively(subgraphs, 1, maxParitionSize,
+      minGraphLength, sc.sparkContext)
+    for(x <- subgraphsFound) {
+      logger.info("Edges remaning : " + x._2.toList)
+    }
 
     /**
      * Output RDD DAG to logger
